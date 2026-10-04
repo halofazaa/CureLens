@@ -21,7 +21,7 @@ export default function Navbar() {
             alt="CureLens Logo"
             width={200}
             height={50}
-            className="h-9 w-auto object-contain"
+            className="h-12 w-auto object-contain"
             priority
           />
         </Link>
