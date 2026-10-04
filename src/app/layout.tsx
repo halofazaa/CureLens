@@ -13,6 +13,11 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "CureLens - Analisis Keamanan & Kontraindikasi Obat Berbasis AI",
   description: "Cek keamanan obat berdasarkan profil medis Anda secara instan dan akurat.",
+  icons: {
+    icon: "/icon.png", // Jalur ke file logo di folder public/
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -22,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={manrope.variable}>
-      <body className="font-sans bg-white text-slate-800 antialiased min-h-screen flex flex-col">
+      <body className="font-sans bg-[#F8FAFC] text-slate-800 antialiased min-h-screen flex flex-col">
         {/* Navbar di paling atas */}
         <Navbar />
 

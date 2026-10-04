@@ -278,7 +278,7 @@ export default function HomePage() {
               {/* Kandungan Terdeteksi */}
               <div className="bg-slate-50/80 rounded-2xl p-3.5 border border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  KANDUNGAN TERDETEKSI (AI OCR SCAN)
+                  KANDUNGAN TERDETEKSI
                 </span>
                 <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
                   <strong className="text-slate-950 font-bold">Pseudoephedrine HCl 7.5mg</strong>, Paracetamol 125mg, Guaifenesin 50mg, Chlorpheniramine Maleate 1mg
@@ -330,7 +330,7 @@ export default function HomePage() {
             </div>
 
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-950 leading-snug tracking-tight">
-              Hindari Risiko Fatal Akibat Interaksi Obat & Kondisi Bawaan
+              Hindari Risiko Fatal Akibat Kontraindikasi Obat dengan Kondisi Medis 
             </h2>
 
             <p className="text-slate-900/90 text-sm sm:text-base font-medium leading-relaxed max-w-2xl">
@@ -349,7 +349,7 @@ export default function HomePage() {
               </div>
               <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-xs font-bold text-slate-950 shadow-sm">
                 <Check className="w-4 h-4 text-slate-950" />
-                <span>Saran Dosis & Petunjuk</span>
+                <span>Deteksi Kontraindikasi Obat</span>
               </div>
             </div>
           </div>
