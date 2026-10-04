@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import {
   Profile,
   QuotaType,
@@ -20,21 +20,30 @@ const FormContext = createContext<FormContextType | null>(null);
 export const FormProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfileState] = useState<Profile>(initialProfile);
   const [selectedImage, setSelectedImageState] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResultState] =
-    useState<AnalysisResponse | null>(null);
+  const [analysisResult, setAnalysisResultState] = useState<AnalysisResponse | null>(null);
   const [quota, setQuotaState] = useState<QuotaType>({
     remaining: 5,
     total: 5,
   });
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [history, setHistoryState] = useState<HistoryItem[]>([]);
 
+  // Fetch kuota dari server + baca localStorage saat mounting
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const savedQuotaDate = localStorage.getItem("curelens_quota_date");
-    const savedQuota = localStorage.getItem("curelens_quota");
-    const savedHistory = localStorage.getItem("curelens_history");
+    // 1. Fetch kuota real-time dari server API
+    fetch("/api/analyze")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.quota) {
+          setQuotaState(data.quota);
+          localStorage.setItem("curelens_quota", JSON.stringify(data.quota));
+        }
+      })
+      .catch((err) => console.error("Gagal sinkronisasi kuota dari server:", err));
+
+    // 2. Baca data tersimpan di localStorage
+    const savedHistory = localStorage.getItem("curelens_history_v2");
     const savedImage = localStorage.getItem("curelens_saved_image");
     const savedAnalysis = localStorage.getItem("curelens_analysis_result");
     const savedProfile = localStorage.getItem("curelens_profile");
@@ -47,25 +56,11 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
-    // Reset kuota jika hari berganti
-    if (savedQuotaDate !== todayStr) {
-      const freshQuota = { remaining: 5, total: 5 };
-      setQuotaState(freshQuota);
-      localStorage.setItem("curelens_quota", JSON.stringify(freshQuota));
-      localStorage.setItem("curelens_quota_date", todayStr);
-    } else if (savedQuota) {
-      try {
-        setQuotaState(JSON.parse(savedQuota));
-      } catch (e) {
-        console.error("Gagal membaca kuota:", e);
-      }
-    }
-
     if (savedHistory) {
       try {
-        setHistory(JSON.parse(savedHistory));
+        setHistoryState(JSON.parse(savedHistory));
       } catch (e) {
-        console.error("Gagal membaca riwayat:", e);
+        console.error("Gagal membaca riwayat dari localStorage:", e);
       }
     }
 
@@ -75,15 +70,14 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         setAnalysisResultState(JSON.parse(savedAnalysis));
       } catch (e) {
-        console.error("Gagal membaca hasil analisis:", e);
+        console.error("Gagal membaca hasil analisis dari localStorage:", e);
       }
     }
   }, []);
 
   const setProfile = (newProfile: React.SetStateAction<Profile>) => {
     setProfileState((prev) => {
-      const updated =
-        typeof newProfile === "function" ? newProfile(prev) : newProfile;
+      const updated = typeof newProfile === "function" ? newProfile(prev) : newProfile;
       localStorage.setItem("curelens_profile", JSON.stringify(updated));
       return updated;
     });
@@ -98,41 +92,53 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const setAnalysisResult = (data: AnalysisResponse | null) => {
-    setAnalysisResultState(data);
-    if (data) {
-      localStorage.setItem("curelens_analysis_result", JSON.stringify(data));
-    } else {
-      localStorage.removeItem("curelens_analysis_result");
-    }
+  const setAnalysisResult = (action: React.SetStateAction<AnalysisResponse | null>) => {
+    setAnalysisResultState((prev) => {
+      const updated = typeof action === "function" ? action(prev) : action;
+      if (updated) {
+        localStorage.setItem("curelens_analysis_result", JSON.stringify(updated));
+      } else {
+        localStorage.removeItem("curelens_analysis_result");
+      }
+      return updated;
+    });
   };
 
-  // Hanya perbarui kuota jika menerima data baru secara eksplisit
-  const setQuota = (newQuota: QuotaType) => {
-    setQuotaState(newQuota);
-    localStorage.setItem("curelens_quota", JSON.stringify(newQuota));
+  const setQuota = useCallback((action: React.SetStateAction<QuotaType>) => {
+    setQuotaState((prev) => {
+      const updated = typeof action === "function" ? action(prev) : action;
+      localStorage.setItem("curelens_quota", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const setHistory = (action: React.SetStateAction<HistoryItem[]>) => {
+    setHistoryState((prev) => {
+      const updated = typeof action === "function" ? action(prev) : action;
+      localStorage.setItem("curelens_history_v2", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const addHistoryItem = (newItem: HistoryItem) => {
-    setHistory((prevHistory) => {
+    setHistoryState((prevHistory) => {
       const exists = prevHistory.some(
         (item) =>
           item.id === newItem.id ||
-          (item.medicineName === newItem.medicineName &&
-            item.detail === newItem.detail),
+          (item.medicineName === newItem.medicineName && item.detail === newItem.detail)
       );
       if (exists) return prevHistory;
 
       const updated = [newItem, ...prevHistory];
-      localStorage.setItem("curelens_history", JSON.stringify(updated));
+      localStorage.setItem("curelens_history_v2", JSON.stringify(updated));
       return updated;
     });
   };
 
   const deleteHistoryItem = (idToDelete: string) => {
-    setHistory((prevHistory) => {
+    setHistoryState((prevHistory) => {
       const updated = prevHistory.filter((item) => item.id !== idToDelete);
-      localStorage.setItem("curelens_history", JSON.stringify(updated));
+      localStorage.setItem("curelens_history_v2", JSON.stringify(updated));
       return updated;
     });
   };
